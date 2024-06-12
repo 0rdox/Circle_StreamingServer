@@ -10,7 +10,8 @@
     <video id="videoElement" autoplay></video>
     <video id="videoElement2" autoplay></video>
 
-    <button id="streamWatcher" onclick="joinRoom('jCYfZLaFLskhSve1AAAD')">Join Room</button>
+    <!-- Hier hardcode ik de room code die wordt gegenerate als iemand naar de server streamt, dit hoort userId te zijn uit de database (nu is het socket.id) -->
+    <button id="streamWatcher" onclick="joinRoom('UoyKOM333P-ehX0IAAAP')">Join Room</button>
     <button id="streamWatcher" onclick="joinRoom('roomName')">Join Room</button>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script>
@@ -34,7 +35,7 @@
 
 
         socket.on("stream", (streamObject) => {
-            // console.log(streamObject);
+            console.log(streamObject);
 
             console.log(streamObject.sequenceId)
             // const receiverBuffer = new Blob([streamObject.data], {
@@ -74,7 +75,7 @@
                                 sequenceId: i, // Sequence ID for the video stream
                             };
                             // console.log(socket.id);
-                            socket.emit("joinRoom", streamObject);
+                            socket.emit("stream", streamObject);
                         }
                     };
 
