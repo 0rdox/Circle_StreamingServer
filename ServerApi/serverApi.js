@@ -36,9 +36,9 @@ app.get('/chat/:_id', async (req, res) => {
 
 
 // Get a single User
-app.get('/user/:id', async (req, res) => {
+app.get('/user/:_id', async (req, res) => {
     try {
-        const user = await db.collection('User').findOne({ _id: ObjectId(req.params.id) });
+        const user = await db.collection('User').findOne({ _id: new ObjectId(req.params._id) });
         res.json(user);
         console.log("response", res.json(user));
     } catch (error) {
@@ -46,15 +46,37 @@ app.get('/user/:id', async (req, res) => {
     }
 });
 
-// get public key from oneUser
-app.get('/user/:id/publicKey', async (req, res) => {
+// get public key from oneUser by email
+app.get('/user/publicKey', async (req, res) => {
     try {
-        const user = await db.collection('User').findOne({ _id: ObjectId(req.params.id) });
-        res.json(user.PublicKey);
+        // Retrieve the email from the query parameters
+        const email = req.query.email;
+
+        // Check if the email is provided
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required in the query parameters' });
+        }
+
+        // Find the user by email
+        const user = await db.collection('User').findOne({ Email: email });
+
+        if (user) {
+            // Respond with the user's public key if found
+            res.json(user.PublicKey);
+        } else {
+            // Respond with a 404 status code and an error message if the user is not found
+            res.status(404).json({ error: 'User not found' });
+        }
+      
     } catch (error) {
+        // Handle any errors that occur during the process
         res.status(500).json({ error: error.toString() });
     }
 });
+
+
+
+
 
 // get public key from all Users
 
