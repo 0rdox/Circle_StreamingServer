@@ -2,6 +2,7 @@ const express = require('express');
 const { MongoClient } = require('mongodb');
 const chatRoutes = require('./routes/chat');
 const userRoutes = require('./routes/user');
+const streamRoutes = require('./routes/stream');
 
 const app = express();
 const port = 6000;
@@ -10,7 +11,7 @@ const port = 6000;
 app.use(express.json());
 
 // MongoDB connection URL and database name
-const url = 'mongodb://localhost:27017';
+const url = 'mongodb://localhost/';
 const dbName = 'TheCircleDB';
 
 // Connect to MongoDB
@@ -28,6 +29,7 @@ MongoClient.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
         // Include route handlers
         app.use('/chat', chatRoutes);
         app.use('/user', userRoutes);
+        app.use('/stream', streamRoutes);
         
         // Start the server
         app.listen(port, () => {
