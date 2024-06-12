@@ -1,11 +1,14 @@
 const express = require('express');
 const { MongoClient, ObjectId } = require('mongodb');
+const users = require('./app/users');
+
 
 const app = express();
 const port = 6000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+app.use('/user', users);
 
 // MongoDB connection URL and database name
 const url = 'mongodb://localhost:27017';
@@ -14,12 +17,12 @@ const dbName = 'TheCircleDB';
 let db;
 
 // Connect to MongoDB
-MongoClient.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(client => {
-        db = client.db(dbName);
-        console.log(`Connected to database: ${dbName}`);
-    })
-    .catch(error => console.error(error));
+// MongoClient.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
+//     .then(client => {
+//         db = client.db(dbName);
+//         console.log(`Connected to database: ${dbName}`);
+//     })
+//     .catch(error => console.error(error));
 
 // Routes
 
@@ -36,15 +39,15 @@ app.get('/chat/:_id', async (req, res) => {
 
 
 // Get a single User
-app.get('/user/:_id', async (req, res) => {
-    try {
-        const user = await db.collection('User').findOne({ _id: new ObjectId(req.params._id) });
-        res.json(user);
-        console.log("response", res.json(user));
-    } catch (error) {
-        res.status(500).json({ error: error.toString() });
-    }
-});
+// app.get('/user/:id', async (req, res) => {
+//     try {
+//         const user = await db.collection('User').findOne({ _id: ObjectId(req.params.id) });
+//         res.json(user);
+//         console.log("response", res.json(user));
+//     } catch (error) {
+//         res.status(500).json({ error: error.toString() });
+//     }
+// });
 
 // get public key from oneUser by email
 app.get('/user/publicKey', async (req, res) => {
