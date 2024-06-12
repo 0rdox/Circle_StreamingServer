@@ -3,7 +3,7 @@ const { ObjectId } = require('mongodb');
 
 const router = express.Router();
 
-// Get a single Chat message
+// Get a single Chat message  // Works
 router.get('/:id', async (req, res) => {
     try {
         const chat = await req.db.collection('Chat').findOne({ _id: new ObjectId(req.params.id) });
