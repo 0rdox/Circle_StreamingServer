@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb');
 
 // MongoDB connection URL and database name
-const url = 'mongodb://localhost:27017';
+const url = 'mongodb://localhost/';
 const dbName = 'TheCircleDB';
 
 let db;
