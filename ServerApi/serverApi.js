@@ -24,26 +24,10 @@ MongoClient.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
 // Routes
 
 // Get a single Chat message
-
-var oid = new ObjectId();
-
-// app.get('/chat/:_id', async (req, res) => {
-//     try {
-//         console.log('Received _id parameter:', req.params._id);
-//         //var id = MongoClient.ObjectId(req.params._id);
-//         const chat = await db.collection('Chat').findOne({ _id: oid })
-//         { _id: ObjectId(req.params._id) };
-
-//         res.json(chat);
-//     } catch (error) {
-//         res.status(500).json({ error: error.toString() });
-//     }
-// });
-
 app.get('/chat/:_id', async (req, res) => {
     try {
         console.log('Received _id parameter:', req.params._id);
-        const chat = await db.collection('Chat').findOne({ _id: ObjectId(req.params._id) });
+        const chat = await db.collection('Chat').findOne({ _id: new ObjectId(req.params._id) });
         res.json(chat);
     } catch (error) {
         res.status(500).json({ error: error.toString() });
@@ -56,6 +40,7 @@ app.get('/user/:id', async (req, res) => {
     try {
         const user = await db.collection('User').findOne({ _id: ObjectId(req.params.id) });
         res.json(user);
+        console.log("response", res.json(user));
     } catch (error) {
         res.status(500).json({ error: error.toString() });
     }
