@@ -13,6 +13,7 @@ const io = new Server(3000, {
   }
 });
 
+// Je moet ervoor zorgen dat alleen streamers iets kunnen sturen.
 
 
 io.on("connection", (socket) => {
