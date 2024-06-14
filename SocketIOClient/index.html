@@ -63,15 +63,18 @@
                     const mediaRecorder = new MediaRecorder(stream);
 
                     mediaRecorder.ondataavailable = (event) => {
+                        let blob = new Blob([event.data], {
+                            type: 'video/webm'
+                        });
                         if (event.data.size > 0 && socket.connected) {
                             i++;
                             // const header = generateVideoHeader(); // Generate header for each blob
                             // const blobWithHeader = appendHeaderToBlob(header, event.data); // Append header to blob
 
                             const streamObject = {
-                                data: event.data, // Send blob with header
+                                data: blob, // Send blob with header
                                 hash: "testHash", // Hash for the video stream
-                                userId: socket.id, // Change this to userId of streamers
+                                userId: 1, // Change this to userId of streamers
                                 sequenceId: i, // Sequence ID for the video stream
                             };
                             // console.log(socket.id);
