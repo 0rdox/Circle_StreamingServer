@@ -1,39 +1,85 @@
 const { MongoClient } = require('mongodb');
-// MongoDB Connection URI
-const uri = 'mongodb://localhost:27017'; // Replace with your MongoDB URI
+
+const uri = 'mongodb://localhost:27017';
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-let db; // Initialize variable to hold the database reference
+let db;
 
 // Connect to MongoDB
 async function connectToDB() {
     try {
         await client.connect();
-        console.log('Connected to MongoDB');
-        db = client.db('TheCircleDB'); // Replace with your database name
+        db = client.db('TheCircleDB');
     } catch (error) {
         console.error('Error connecting to MongoDB:', error);
     }
 }
 
-async function getUser(id) {
+
+async function getUser(userId) {
+    console.log(userId);
     try {
-        const collection = db.collection('User'); // Replace with your collection name
-        await collection.getOne(id);
-        console.log('Stream saved to MongoDB');
+        const collection = db.collection('User');
+
+        await collection.findOne({ userId: userId });
     } catch (error) {
         console.error('Error saving stream to MongoDB:', error);
     }
 }
 
 async function saveStream(streamObject) {
-    // Save streamObject to MongoDB
     try {
-        const collection = db.collection('video_streams'); // Replace with your collection name
+        const collection = db.collection('video_streams');
         await collection.insertOne(streamObject);
-        console.log('Stream saved to MongoDB');
     } catch (error) {
         console.error('Error saving stream to MongoDB:', error);
     }
 }
-module.exports = { connectToDB, saveStream };
+
+/**
+ * Verifies a request.
+ * @param {Object} req - The request to verify.
+ * @param {Object} socket - The socket of the user.
+ * @returns {boolean} True if the request is verified, false otherwise.
+ */
+function verifyRequest(socket) {
+    if (req.username && req.userId && req.timestamp && req.content && req.hash) {
+        if (socket.username === req.username && socket.userId === req.userId) {
+            if (verifyHash(req, socket)) {
+                logger.debug("Request verified");
+                return true;
+            }
+        }
+    }
+    logger.error("Request verification failed");
+    socket.emit("error", { message: "Request invalid" });
+    return false;
+}
+
+/**
+ * Verifies a hash.
+ * @param {Object} req - The request containing the hash.
+ * @param {Object} socket - The socket of the user.
+ * @returns {boolean} True if the hash is verified, false otherwise.
+ */
+function verifyHash(socket) {
+    //Decrypt hash in req using the public key of the user
+    if (!socket.userPk) {
+        logger.error("User public key not found");
+        return false;
+    }
+
+    //Check how to decrypt in viewer client
+    const decryptedHash = RSAHelper.decrypt(req.hash, socket.userPk);
+    const hash = sha512(`${req.username}-${req.userId}-${req.timestamp}-${req.content}`);
+
+    if (decryptedHash === hash) {
+        logger.debug("Hash verified");
+        return true;
+    } else {
+        logger.warn("Hash verification failed");
+        return false;
+    }
+}
+
+module.exports = { connectToDB, saveStream, getUser };
