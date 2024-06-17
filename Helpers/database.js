@@ -16,6 +16,15 @@ async function connectToDB() {
     }
 }
 
+async function getUser(id) {
+    try {
+        const collection = db.collection('User'); // Replace with your collection name
+        await collection.getOne(id);
+        console.log('Stream saved to MongoDB');
+    } catch (error) {
+        console.error('Error saving stream to MongoDB:', error);
+    }
+}
 
 async function saveStream(streamObject) {
     // Save streamObject to MongoDB
