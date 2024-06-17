@@ -1,4 +1,5 @@
 const { Server } = require("socket.io");
+const { MongoClient, Binary } = require('mongodb');
 const fs = require("fs");
 const path = require("path");
 const { Stream } = require("stream");
@@ -13,6 +14,25 @@ const io = new Server(3000, {
   }
 });
 
+// MongoDB Connection URI
+const uri = 'mongodb://localhost:27017'; // Replace with your MongoDB URI
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+let db; // Initialize variable to hold the database reference
+
+// Connect to MongoDB
+async function connectToDB() {
+    try {
+        await client.connect();
+        console.log('Connected to MongoDB');
+        db = client.db('TheCircleDB'); // Replace with your database name
+    } catch (error) {
+        console.error('Error connecting to MongoDB:', error);
+    }
+}
+
+connectToDB();
+
 // Je moet ervoor zorgen dat alleen streamers iets kunnen sturen.
 
 io.on("connection", (socket) => {
@@ -25,13 +45,22 @@ io.on("connection", (socket) => {
   console.log(`connect ${socket.id}`);
 
   //Receiving data from streamer
-  socket.on("stream", (streamObject) => {
+  socket.on("stream", async (streamObject) => {
     const userId = streamObject.userId;
 
     //Check if streamObject contains userId
     if (!userId) {
       console.error('Received stream object without userId:', streamObject);
       return;
+    }
+
+    // Save streamObject to MongoDB
+    try {
+      const collection = db.collection('video_streams'); // Replace with your collection name
+      await collection.insertOne(streamObject);
+      console.log('Stream saved to MongoDB');
+    } catch (error) {
+      console.error('Error saving stream to MongoDB:', error);
     }
 
     //Map.push (socketId), [(roomId), (userRole)]
@@ -44,7 +73,6 @@ io.on("connection", (socket) => {
 
       console.log("Created room with id: " + userId);
     }
-
 
     streams[userId].push(streamObject);
     //How to continue streaming to the room?
@@ -68,17 +96,7 @@ io.on("connection", (socket) => {
         socket.emit('stream', streamObject);
       });
     }
-
   });
-
-
-
-  // socket.on("stopStream", (streamObject) => {
-  //   if (streams[roomId]) {
-  //     delete streams[roomId];
-  //   }
-  // })
-
 
   socket.on("disconnect", () => {
     console.log(`disconnect ${socket.id}`);
@@ -94,15 +112,7 @@ io.on("connection", (socket) => {
     } else {
       console.log("User not added")
     }
-
   });
 });
 
-
 console.log("Server started at ws://localhost:3000/");
-
-// {
-//   data: ,
-//     hash: ,
-//   userId:
-// }
