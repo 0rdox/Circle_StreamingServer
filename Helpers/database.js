@@ -17,13 +17,13 @@ async function connectToDB() {
 
 
 async function getUser(userId) {
-    console.log(userId);
     try {
         const collection = db.collection('User');
 
-        await collection.findOne({ userId: userId });
+        return await collection.findOne({ userId: userId });
+
     } catch (error) {
-        console.error('Error saving stream to MongoDB:', error);
+        console.error('Error getting user:', error);
     }
 }
 

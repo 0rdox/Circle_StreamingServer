@@ -1,11 +1,13 @@
-const { Server } = require("socket.io");
-const { MongoClient, Binary } = require('mongodb');
-const fs = require("fs");
 const path = require("path");
+require('dotenv').config({ path: path.join(__dirname, '../' + ".env") });
+const { Server } = require("socket.io");
 const { Stream } = require("stream");
-const db = require('../Helpers/database.js');
+// const { Mongoose } = require("mongoose");
 const streams = {};
 const map = new Map();
+const db = require('../Helpers/database.js');
+
+const jwt = require('jsonwebtoken');
 
 const io = new Server(3000, {
   cors: {
@@ -17,13 +19,48 @@ const io = new Server(3000, {
 //Connect to Database
 db.connectToDB();
 
+/**
+ * Middleware to verify the token of the user connecting to the socket and get the needed user's data.
+ */
+io.use(async (socket, next) => {
+  let token = socket.handshake.auth.token;
+
+  if (token) {
+    token = token.split(" ")[1];
+  } else if (!token) {
+    return next(new Error("Unauthorized"));
+  }
+
+  jwt.verify(token, process.env.SECRET_KEY, { algorithms: ["HS256"] }, (err, decoded) => {
+    if (err) {
+      return;
+    }
+    console.log("Token successfully verified");
+    socket.userId = decoded.id;
+    console.log("User ID: ", socket.userId)
+  });
+
+  await db.getUser(socket.userId).then((user) => {
+    console.log("User: ", user);
+    if (!user) {
+      return next(new Error("Unauthorized"));
+    }
+
+    console.log("USER:" + user);
+    socket.username = user.UserName;
+    socket.userId = user._id.toString();
+    console.log("Username: " + socket.username);
+    console.log("id: " + socket.userId);
+    socket.userPk = user.PublicKey;
+
+    console.log("PK: " + socket.userPk);
+  });
+
+  next();
+});
+
 io.on("connection", (socket) => {
-  // Get token and verify
-
-
-  // Change to userId from token
-  // Add check -> verifyRequest(), if not verified he cannot stream/watch
-  db.getUser(129819);
+  // When to use verifyUser?
 
   console.log(`connect ${socket.id}`);
 
