@@ -1,8 +1,7 @@
-const { Server } = require("socket.io");
-const fs = require("fs");
 const path = require("path");
+require('dotenv').config({ path: path.join(__dirname, '../' + ".env") });
+const { Server } = require("socket.io");
 const { Stream } = require("stream");
-require('dotenv').config();
 // const { Mongoose } = require("mongoose");
 const streams = {};
 const map = new Map();
@@ -14,10 +13,12 @@ const io = new Server(3000, {
   }
 });
 
+console.log(path.join(__dirname, '../' + ".env"));
 //Only streamers can send something
 
 io.on("connection", (socket) => {
   // Check for token
+  console.log("Secret Key " + process.env['SECRET_KEY']);
   if (socket.handshake.headers.authorization) {
     const token = socket.handshake.headers.authorization;
   } else {
@@ -51,8 +52,7 @@ io.on("connection", (socket) => {
 
     // Get the user ID from the decoded token
     //   const userId = decoded.userId;
-
-    //   // Map the socket ID to the user ID and set the user role as "viewer"
+    //   Map the socket ID to the user ID and set the user role as "viewer"
     map.set(socket.id, [userId, "viewer"]);
 
 
@@ -131,7 +131,6 @@ io.on("connection", (socket) => {
 
   }
 
-  console.log("Server started at ws://localhost:3000/");
 
   // {
   //   data: ,
@@ -139,3 +138,5 @@ io.on("connection", (socket) => {
   //   userId:
   // }
 });
+console.log("Server started at ws://localhost:3000/");
+console.log("Secret Key " + process.env.SECRET_KEY);
