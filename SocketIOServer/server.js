@@ -17,6 +17,10 @@ console.log(path.join(__dirname, '../' + ".env"));
 //Only streamers can send something
 
 io.on("connection", (socket) => {
+
+  //Get token out of handshake.auth.token or headers.authorization --> depends on client very easy
+  let token = socket.handshake.auth.token;
+  console.log("Token: " + token);
   // Check for token
   if (socket.handshake.headers.authorization) {
     const token = socket.handshake.headers.authorization;
