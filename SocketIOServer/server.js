@@ -3,7 +3,7 @@ const { MongoClient, Binary } = require('mongodb');
 const fs = require("fs");
 const path = require("path");
 const { Stream } = require("stream");
-
+const db = require('../Helpers/database.js');
 const streams = {};
 const map = new Map();
 
@@ -14,25 +14,10 @@ const io = new Server(3000, {
   }
 });
 
-// MongoDB Connection URI
-const uri = 'mongodb://localhost:27017'; // Replace with your MongoDB URI
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-let db; // Initialize variable to hold the database reference
 
-// Connect to MongoDB
-async function connectToDB() {
-    try {
-        await client.connect();
-        console.log('Connected to MongoDB');
-        db = client.db('TheCircleDB'); // Replace with your database name
-    } catch (error) {
-        console.error('Error connecting to MongoDB:', error);
-    }
-}
 
-connectToDB();
-
+db.connectToDB();
 // Je moet ervoor zorgen dat alleen streamers iets kunnen sturen.
 
 io.on("connection", (socket) => {
@@ -54,14 +39,9 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // Save streamObject to MongoDB
-    try {
-      const collection = db.collection('video_streams'); // Replace with your collection name
-      await collection.insertOne(streamObject);
-      console.log('Stream saved to MongoDB');
-    } catch (error) {
-      console.error('Error saving stream to MongoDB:', error);
-    }
+
+    db.saveStream(streamObject);
+
 
     //Map.push (socketId), [(roomId), (userRole)]
     map.set(socket.id, [streamObject.userId, "Streamer"]);
