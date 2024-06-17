@@ -18,7 +18,6 @@ console.log(path.join(__dirname, '../' + ".env"));
 
 io.on("connection", (socket) => {
   // Check for token
-  console.log("Secret Key " + process.env['SECRET_KEY']);
   if (socket.handshake.headers.authorization) {
     const token = socket.handshake.headers.authorization;
   } else {
@@ -28,7 +27,7 @@ io.on("connection", (socket) => {
 
   // Verify the token
   // place secret in env
-  jwt.verify(token, "secret", (err, decoded) => {
+  jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
     if (err) {
       console.error("Invalid token:", err);
       return;
