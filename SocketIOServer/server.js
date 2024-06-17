@@ -1,8 +1,9 @@
 const { Server } = require("socket.io");
+const { MongoClient, Binary } = require('mongodb');
 const fs = require("fs");
 const path = require("path");
 const { Stream } = require("stream");
-
+const db = require('../Helpers/database.js');
 const streams = {};
 const map = new Map();
 
@@ -13,19 +14,21 @@ const io = new Server(3000, {
   }
 });
 
-// Je moet ervoor zorgen dat alleen streamers iets kunnen sturen.
+//Connect to Database
+db.connectToDB();
 
 io.on("connection", (socket) => {
-  //Check if user is valid
-  //const token = socket.handshake.headers.authorization;
+  // Get token and verify
 
-  // jwt.verify token
-  // map (socketId, [verified token userId, "viewer"])   //when user starts streaming, change the unknown to streamer
+
+  // Change to userId from token
+  // Add check -> verifyRequest(), if not verified he cannot stream/watch
+  db.getUser(129819);
 
   console.log(`connect ${socket.id}`);
 
   //Receiving data from streamer
-  socket.on("stream", (streamObject) => {
+  socket.on("stream", async (streamObject) => {
     const userId = streamObject.userId;
 
     //Check if streamObject contains userId
@@ -34,22 +37,19 @@ io.on("connection", (socket) => {
       return;
     }
 
-    //Map.push (socketId), [(roomId), (userRole)]
+    //Save stream to database
+    db.saveStream(streamObject);
+
+    //Keep track of if user is a streamer
     map.set(socket.id, [streamObject.userId, "Streamer"]);
 
-    //Check if user has a stream array, if not; create it.
+    //Check if user has a stream array, if not; create it. (caching)
     if (!streams[userId]) {
-      console.log("reached")
       streams[userId] = [];
-
-      console.log("Created room with id: " + userId);
     }
 
-
     streams[userId].push(streamObject);
-    //How to continue streaming to the room?
     io.in(userId).emit("stream", streamObject);
-    // io.emit("stream", streamObject);
   });
 
   // Joining a room
@@ -57,52 +57,30 @@ io.on("connection", (socket) => {
     socket.join(RoomId);
     console.log(socket.id + " Joined room: " + RoomId);
 
-    //Map socket id to room id
+    //Keep track of if user is a viewer
     map.set(socket.id, [RoomId, "Viewer"]);
-    // console.log(`User ${socket.id} joined room ${RoomId}`);
 
-    // Send all previously saved streams to the new client
+    // Send all previously saved streams to the viewer
     if (streams[RoomId]) {
       console.log("Getting array", streams[RoomId]);
       streams[RoomId].forEach((streamObject) => {
         socket.emit('stream', streamObject);
       });
     }
-
   });
 
 
-
-  // socket.on("stopStream", (streamObject) => {
-  //   if (streams[roomId]) {
-  //     delete streams[roomId];
-  //   }
-  // })
-
-
+  // Disconnecting
   socket.on("disconnect", () => {
-    console.log(`disconnect ${socket.id}`);
-
-    //Checks if the socket is a streamer and deletes the stream if it is.
+    //Check if the user is a streamer, if so; delete streams from cache
     const user = map.get(socket.id);
     if (user && user[1] === "Streamer") {
       const roomId = user[0];
       if (streams[roomId]) {
         delete streams[roomId];
-        console.log("Stream Deleted");
       }
-    } else {
-      console.log("User not added")
-    }
-
+    } else { }
   });
 });
 
-
 console.log("Server started at ws://localhost:3000/");
-
-// {
-//   data: ,
-//     hash: ,
-//   userId:
-// }
