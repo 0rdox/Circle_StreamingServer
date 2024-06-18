@@ -41,6 +41,8 @@ io.use(async (socket, next) => {
     // console.log("User ID: ", socket._id)
   });
 
+  console.log("id", socket._id);
+
   await db.getUser(socket._id).then((user) => {
     console.log("User: ", user);
     if (!user) {
@@ -64,10 +66,12 @@ io.on("connection", (socket) => {
 
   //Receiving data from streamer
   socket.on("stream", async (streamObject) => {
-    // console.log("streamobject", streamObject);
-    // console.log("hash: " + streamObject.hash);
-    // db.verifyRequest(socket, streamObject);
     const userId = streamObject.userId;
+
+    //Check if the request is valid
+    if (!db.verifyRequest(socket, streamObject)) {
+      return;
+    }
 
     //Check if streamObject contains userId
     if (!userId) {
