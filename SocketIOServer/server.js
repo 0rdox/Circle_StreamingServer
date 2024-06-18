@@ -36,22 +36,21 @@ io.use(async (socket, next) => {
       return;
     }
     console.log("Token successfully verified");
-    socket.userId = decoded.id;
-    console.log("User ID: ", socket.userId)
+    // console.log("Decoded:", decoded);
+    socket._id = decoded.id;
+    // console.log("User ID: ", socket._id)
   });
 
-  await db.getUser(socket.userId).then((user) => {
+  await db.getUser(socket._id).then((user) => {
     console.log("User: ", user);
     if (!user) {
       return next(new Error("Unauthorized"));
     }
 
-    console.log("USER:" + user);
-    socket.username = user.UserName;
-    socket.userId = user._id.toString();
-    console.log("Username: " + socket.username);
-    console.log("id: " + socket.userId);
+    console.log("USER:", user);
+    socket._id = user._id.toString(); //Or user._id? what does user db look like   
     socket.userPk = user.PublicKey;
+    //Does db have a Is streaming? then the map is not necessary
 
     console.log("PK: " + socket.userPk);
   });
@@ -60,12 +59,14 @@ io.use(async (socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  // When to use verifyUser?
-
+  // console.log(db.verifyRequest(socket));
   console.log(`connect ${socket.id}`);
 
   //Receiving data from streamer
   socket.on("stream", async (streamObject) => {
+    // console.log("streamobject", streamObject);
+    // console.log("hash: " + streamObject.hash);
+    // db.verifyRequest(socket, streamObject);
     const userId = streamObject.userId;
 
     //Check if streamObject contains userId
@@ -99,7 +100,7 @@ io.on("connection", (socket) => {
 
     // Send all previously saved streams to the viewer
     if (streams[RoomId]) {
-      console.log("Getting array", streams[RoomId]);
+      // console.log("Getting array", streams[RoomId]);
       streams[RoomId].forEach((streamObject) => {
         socket.emit('stream', streamObject);
       });

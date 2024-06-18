@@ -20,7 +20,7 @@ async function getUser(userId) {
     try {
         const collection = db.collection('User');
 
-        return await collection.findOne({ userId: userId });
+        return await collection.findOne({ _id: userId });
 
     } catch (error) {
         console.error('Error getting user:', error);
@@ -42,16 +42,22 @@ async function saveStream(streamObject) {
  * @param {Object} socket - The socket of the user.
  * @returns {boolean} True if the request is verified, false otherwise.
  */
-function verifyRequest(socket) {
-    if (req.username && req.userId && req.timestamp && req.content && req.hash) {
-        if (socket.username === req.username && socket.userId === req.userId) {
-            if (verifyHash(req, socket)) {
-                logger.debug("Request verified");
+function verifyRequest(socket, streamObject) {
+    // console.log("request verify part 0")
+    // console.log("HASH", streamObject.hash);
+    if (socket._id && streamObject.hash) {
+        console.log("Request verified part 1");
+        console.log("socket ID", socket._id);
+        console.log("streamObject userId", streamObject.userId);
+        if (socket._id === streamObject.userId) {
+            console.log("Request verified part 2");
+            if (verifyHash(socket, streamObject)) {
+                console.log("Request fully verified");
                 return true;
             }
         }
     }
-    logger.error("Request verification failed");
+    console.log("Request verification failed");
     socket.emit("error", { message: "Request invalid" });
     return false;
 }
@@ -62,24 +68,25 @@ function verifyRequest(socket) {
  * @param {Object} socket - The socket of the user.
  * @returns {boolean} True if the hash is verified, false otherwise.
  */
-function verifyHash(socket) {
+function verifyHash(socket, streamObject) {
     //Decrypt hash in req using the public key of the user
+    console.log("Verifying Hash");
     if (!socket.userPk) {
-        logger.error("User public key not found");
+        console.log("User public key not found");
         return false;
     }
 
     //Check how to decrypt in viewer client
-    const decryptedHash = RSAHelper.decrypt(req.hash, socket.userPk);
-    const hash = sha512(`${req.username}-${req.userId}-${req.timestamp}-${req.content}`);
+    const decryptedHash = RSAHelper.decrypt(streamObject.hash, socket.userPk);
+    const hash = sha512(`${streamObject.data}`);
 
     if (decryptedHash === hash) {
-        logger.debug("Hash verified");
+        console.log("Hash verified");
         return true;
     } else {
-        logger.warn("Hash verification failed");
+        console.log("Hash verification failed");
         return false;
     }
 }
 
-module.exports = { connectToDB, saveStream, getUser };
+module.exports = { connectToDB, saveStream, getUser, verifyRequest };
