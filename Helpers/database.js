@@ -74,12 +74,12 @@ async function deactivateStream(userId) {
 
         // Calculate satoshi
         const durationInMilliseconds = endTime - startTime;
-        const durationInSeconds = durationInMilliseconds / 1000;
+        const durationInHours = durationInMilliseconds / (1000 * 60 * 60);
 
         let satoshiEarned = 0;
         let satoshiPerInterval = 1;
 
-        const numberOfIntervals = Math.floor(durationInSeconds / 10);
+        const numberOfIntervals = Math.floor(durationInHours);
 
         for (let i = 0; i < numberOfIntervals; i++) {
             satoshiEarned += satoshiPerInterval;
