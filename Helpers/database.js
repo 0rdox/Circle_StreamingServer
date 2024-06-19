@@ -48,14 +48,14 @@ function verifyRequest(socket, streamObject) {
 
 
 let streamId;
-// let startTime;
+let startTime;
 async function activateStream(userId) {
 
     try {
         const streamCollection = db.collection('Stream');
         const result = await streamCollection.insertOne({ userId: new ObjectId(userId), StartTime: new Date() }).then((result) => {
             streamId = result.insertedId;
-            // startTime = new Date();
+            startTime = new Date();
         });
 
         const collection = db.collection('User');
@@ -68,26 +68,27 @@ async function activateStream(userId) {
 
 async function deactivateStream(userId) {
     try {
-        //Add end time to stream
         const streamCollection = db.collection('Stream');
-        await streamCollection.updateOne({ _id: new ObjectId(streamId) }, { $set: { EndTime: new Date() } });
+        const endTime = new Date();
+        await streamCollection.updateOne({ _id: new ObjectId(streamId) }, { $set: { EndTime: endTime } });
 
         // Calculate satoshi
-        // const startTime = startTime;
-        // const endTime = new Date();
+        const durationInMilliseconds = endTime - startTime;
+        const durationInSeconds = durationInMilliseconds / 1000;
 
-        // const durationInMilliseconds = endTime - startTime;
-        // const durationInSeconds = durationInMilliseconds / 1000;
+        let satoshiEarned = 0;
+        let satoshiPerInterval = 1;
 
-        // const satoshiEarned = Math.floor(durationInSeconds / 10) + 1;
+        const numberOfIntervals = Math.floor(durationInSeconds / 10);
 
-        // console.log('Stream duration:', durationInSeconds, 'seconds');
-        // console.log('Satoshi earned:', satoshiEarned);
-
+        for (let i = 0; i < numberOfIntervals; i++) {
+            satoshiEarned += satoshiPerInterval;
+            satoshiPerInterval *= 2;
+        }
 
         //Set user to not streaming
         const collection = db.collection('User');
-        await collection.updateOne({ _id: new ObjectId(userId) }, { $set: { IsStreaming: false } });
+        await collection.updateOne({ _id: new ObjectId(userId) }, { $inc: { Balance: satoshiEarned }, $set: { IsStreaming: false } });
         console.log('Stream deactivated successfully');
     } catch (error) {
         console.error('Error deactivating stream', error);
