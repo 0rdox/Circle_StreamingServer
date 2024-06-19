@@ -1,5 +1,5 @@
 const { MongoClient, ObjectId } = require('mongodb');
-const uri = 'mongodb://localhost:27017';
+const uri = 'mongodb://145.49.13.230:27017';
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 let db;
@@ -48,14 +48,14 @@ function verifyRequest(socket, streamObject) {
 
 
 let streamId;
-let startTime;
+// let startTime;
 async function activateStream(userId) {
 
     try {
         const streamCollection = db.collection('Stream');
         const result = await streamCollection.insertOne({ userId: new ObjectId(userId), StartTime: new Date() }).then((result) => {
             streamId = result.insertedId;
-            startTime = new Date();
+            // startTime = new Date();
         });
 
         const collection = db.collection('User');
@@ -72,6 +72,19 @@ async function deactivateStream(userId) {
         const streamCollection = db.collection('Stream');
         await streamCollection.updateOne({ _id: new ObjectId(streamId) }, { $set: { EndTime: new Date() } });
 
+        // Calculate satoshi
+        // const startTime = startTime;
+        // const endTime = new Date();
+
+        // const durationInMilliseconds = endTime - startTime;
+        // const durationInSeconds = durationInMilliseconds / 1000;
+
+        // const satoshiEarned = Math.floor(durationInSeconds / 10) + 1;
+
+        // console.log('Stream duration:', durationInSeconds, 'seconds');
+        // console.log('Satoshi earned:', satoshiEarned);
+
+
         //Set user to not streaming
         const collection = db.collection('User');
         await collection.updateOne({ _id: new ObjectId(userId) }, { $set: { IsStreaming: false } });
@@ -80,8 +93,6 @@ async function deactivateStream(userId) {
         console.error('Error deactivating stream', error);
     }
 }
-//jan@co.com
-// e = 369
-// n = 493
+
 
 module.exports = { connectToDB, saveStream, getUser, verifyRequest, activateStream, deactivateStream };
