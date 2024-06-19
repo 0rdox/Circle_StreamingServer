@@ -1,5 +1,5 @@
 const { MongoClient, ObjectId } = require('mongodb');
-const uri = 'mongodb://localhost:27017';
+const uri = 'mongodb://145.49.13.230:27017';
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 let db;
@@ -68,20 +68,32 @@ async function activateStream(userId) {
 
 async function deactivateStream(userId) {
     try {
-        //Add end time to stream
         const streamCollection = db.collection('Stream');
-        await streamCollection.updateOne({ _id: new ObjectId(streamId) }, { $set: { EndTime: new Date() } });
+        const endTime = new Date();
+        await streamCollection.updateOne({ _id: new ObjectId(streamId) }, { $set: { EndTime: endTime } });
+
+        // Calculate satoshi
+        const durationInMilliseconds = endTime - startTime;
+        const durationInSeconds = durationInMilliseconds / 1000;
+
+        let satoshiEarned = 0;
+        let satoshiPerInterval = 1;
+
+        const numberOfIntervals = Math.floor(durationInSeconds / 10);
+
+        for (let i = 0; i < numberOfIntervals; i++) {
+            satoshiEarned += satoshiPerInterval;
+            satoshiPerInterval *= 2;
+        }
 
         //Set user to not streaming
         const collection = db.collection('User');
-        await collection.updateOne({ _id: new ObjectId(userId) }, { $set: { IsStreaming: false } });
+        await collection.updateOne({ _id: new ObjectId(userId) }, { $inc: { Balance: satoshiEarned }, $set: { IsStreaming: false } });
         console.log('Stream deactivated successfully');
     } catch (error) {
         console.error('Error deactivating stream', error);
     }
 }
-//jan@co.com
-// e = 369
-// n = 493
+
 
 module.exports = { connectToDB, saveStream, getUser, verifyRequest, activateStream, deactivateStream };
