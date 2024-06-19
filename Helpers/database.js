@@ -1,5 +1,4 @@
-const { MongoClient } = require('mongodb');
-
+const { MongoClient, ObjectId } = require('mongodb');
 const uri = 'mongodb://localhost:27017';
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -17,13 +16,13 @@ async function connectToDB() {
 
 
 async function getUser(userId) {
-    console.log(userId);
+    console.log("UserId: ", userId);
     try {
         const collection = db.collection('User');
+        return await collection.findOne({ _id: new ObjectId(userId) });
 
-        await collection.findOne({ userId: userId });
     } catch (error) {
-        console.error('Error saving stream to MongoDB:', error);
+        console.error('Error getting user:', error);
     }
 }
 
@@ -36,50 +35,53 @@ async function saveStream(streamObject) {
     }
 }
 
-/**
- * Verifies a request.
- * @param {Object} req - The request to verify.
- * @param {Object} socket - The socket of the user.
- * @returns {boolean} True if the request is verified, false otherwise.
- */
-function verifyRequest(socket) {
-    if (req.username && req.userId && req.timestamp && req.content && req.hash) {
-        if (socket.username === req.username && socket.userId === req.userId) {
-            if (verifyHash(req, socket)) {
-                logger.debug("Request verified");
-                return true;
-            }
+// Verify if the request has all necessary data
+function verifyRequest(socket, streamObject) {
+    if (socket._id && streamObject.hash && streamObject.data && streamObject.userId) {
+        if (socket._id === streamObject.userId) {
+            return true;
         }
     }
-    logger.error("Request verification failed");
     socket.emit("error", { message: "Request invalid" });
     return false;
 }
 
-/**
- * Verifies a hash.
- * @param {Object} req - The request containing the hash.
- * @param {Object} socket - The socket of the user.
- * @returns {boolean} True if the hash is verified, false otherwise.
- */
-function verifyHash(socket) {
-    //Decrypt hash in req using the public key of the user
-    if (!socket.userPk) {
-        logger.error("User public key not found");
-        return false;
-    }
 
-    //Check how to decrypt in viewer client
-    const decryptedHash = RSAHelper.decrypt(req.hash, socket.userPk);
-    const hash = sha512(`${req.username}-${req.userId}-${req.timestamp}-${req.content}`);
+let streamId;
+let startTime;
+async function activateStream(userId) {
 
-    if (decryptedHash === hash) {
-        logger.debug("Hash verified");
-        return true;
-    } else {
-        logger.warn("Hash verification failed");
-        return false;
+    try {
+        const streamCollection = db.collection('Stream');
+        const result = await streamCollection.insertOne({ userId: new ObjectId(userId), StartTime: new Date() }).then((result) => {
+            streamId = result.insertedId;
+            startTime = new Date();
+        });
+
+        const collection = db.collection('User');
+        await collection.updateOne({ _id: new ObjectId(userId) }, { $set: { IsStreaming: true } });
+        console.log('Stream activated successfully');
+    } catch (error) {
+        console.error('Error activating chat', error);
     }
 }
 
-module.exports = { connectToDB, saveStream, getUser };
+async function deactivateStream(userId) {
+    try {
+        //Add end time to stream
+        const streamCollection = db.collection('Stream');
+        await streamCollection.updateOne({ _id: new ObjectId(streamId) }, { $set: { EndTime: new Date() } });
+
+        //Set user to not streaming
+        const collection = db.collection('User');
+        await collection.updateOne({ _id: new ObjectId(userId) }, { $set: { IsStreaming: false } });
+        console.log('Stream deactivated successfully');
+    } catch (error) {
+        console.error('Error deactivating stream', error);
+    }
+}
+//jan@co.com
+// e = 369
+// n = 493
+
+module.exports = { connectToDB, saveStream, getUser, verifyRequest, activateStream, deactivateStream };
