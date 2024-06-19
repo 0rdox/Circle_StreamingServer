@@ -38,10 +38,9 @@ io.use(async (socket, next) => {
     }
 
     console.log("USER:", user);
-    socket._id = user._id.toString(); //Or user._id? what does user db look like   
+    socket._id = user._id.toString();
     socket.userPk = user.PublicKey;
     socket.userName = user.UserName;
-    //Does db have a IDs streaming? then the map is not necessary
 
   });
 

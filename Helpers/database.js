@@ -14,7 +14,6 @@ async function connectToDB() {
     }
 }
 
-
 async function getUser(userId) {
     console.log("UserId: ", userId);
     try {
