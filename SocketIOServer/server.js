@@ -24,6 +24,7 @@ db.connectToDB();
  */
 io.use(async (socket, next) => {
   let token = socket.handshake.auth.token;
+  console.log("Token: ", token);
 
   if (token) {
     token = token.split(" ")[1];
@@ -31,14 +32,17 @@ io.use(async (socket, next) => {
     return next(new Error("Unauthorized"));
   }
 
+
+
   jwt.verify(token, process.env.SECRET_KEY, { algorithms: ["HS256"] }, (err, decoded) => {
     if (err) {
       return;
     }
     console.log("Token successfully verified");
     // console.log("Decoded:", decoded);
-    socket._id = decoded.id;
-    // console.log("User ID: ", socket._id)
+
+    socket._id = decoded.UserId;
+    console.log("User ID: ", socket._id)
   });
 
   console.log("id", socket._id);
@@ -52,9 +56,9 @@ io.use(async (socket, next) => {
     console.log("USER:", user);
     socket._id = user._id.toString(); //Or user._id? what does user db look like   
     socket.userPk = user.PublicKey;
-    //Does db have a Is streaming? then the map is not necessary
+    socket.userName = user.UserName;
+    //Does db have a IDs streaming? then the map is not necessary
 
-    console.log("PK: " + socket.userPk);
   });
 
   next();
@@ -62,11 +66,17 @@ io.use(async (socket, next) => {
 
 io.on("connection", (socket) => {
   // console.log(db.verifyRequest(socket));
-  console.log(`connect ${socket.id}`);
+  console.log(`connect ${socket.userName}`);
 
-  //Receiving data from streamer
+  //-----------------------------------Receiving Stream-----------------------------------\\
   socket.on("stream", async (streamObject) => {
+
+    //Add stream timestamp
     const userId = streamObject.userId;
+
+    if (!streams[userId]) {
+      db.activateStream(userId);
+    }
 
     //Check if the request is valid
     if (!db.verifyRequest(socket, streamObject)) {
@@ -97,9 +107,10 @@ io.on("connection", (socket) => {
   // Joining a room
   socket.on('joinRoom', (RoomId) => {
     socket.join(RoomId);
-    console.log(socket.id + " Joined room: " + RoomId);
+    console.log(socket.Username + " Joined room: " + RoomId);
 
     //Keep track of if user is a viewer
+    //TODO: Check if user is streaming and watches their own stream do they still get set as Viewer?
     map.set(socket.id, [RoomId, "Viewer"]);
 
     // Send all previously saved streams to the viewer
@@ -119,6 +130,7 @@ io.on("connection", (socket) => {
     if (user && user[1] === "Streamer") {
       const roomId = user[0];
       if (streams[roomId]) {
+        db.deactivateStream(roomId);
         delete streams[roomId];
       }
     } else { }

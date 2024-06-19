@@ -16,9 +16,9 @@ async function connectToDB() {
 
 
 async function getUser(userId) {
+    console.log("UserId: ", userId);
     try {
         const collection = db.collection('User');
-
         return await collection.findOne({ _id: new ObjectId(userId) });
 
     } catch (error) {
@@ -47,6 +47,41 @@ function verifyRequest(socket, streamObject) {
 }
 
 
+let streamId;
+let startTime;
+async function activateStream(userId) {
 
+    try {
+        const streamCollection = db.collection('Stream');
+        const result = await streamCollection.insertOne({ userId: new ObjectId(userId), StartTime: new Date() }).then((result) => {
+            streamId = result.insertedId;
+            startTime = new Date();
+        });
 
-module.exports = { connectToDB, saveStream, getUser, verifyRequest };
+        const collection = db.collection('User');
+        await collection.updateOne({ _id: new ObjectId(userId) }, { $set: { IsStreaming: true } });
+        console.log('Stream activated successfully');
+    } catch (error) {
+        console.error('Error activating chat', error);
+    }
+}
+
+async function deactivateStream(userId) {
+    try {
+        //Add end time to stream
+        const streamCollection = db.collection('Stream');
+        await streamCollection.updateOne({ _id: new ObjectId(streamId) }, { $set: { EndTime: new Date() } });
+
+        //Set user to not streaming
+        const collection = db.collection('User');
+        await collection.updateOne({ _id: new ObjectId(userId) }, { $set: { IsStreaming: false } });
+        console.log('Stream deactivated successfully');
+    } catch (error) {
+        console.error('Error deactivating stream', error);
+    }
+}
+//jan@co.com
+// e = 369
+// n = 493
+
+module.exports = { connectToDB, saveStream, getUser, verifyRequest, activateStream, deactivateStream };
