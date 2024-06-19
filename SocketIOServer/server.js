@@ -57,11 +57,7 @@ io.on("connection", (socket) => {
     const userId = streamObject.userId;
 
     //Check if the request is valid
-    if (!db.verifyRequest(socket, streamObject)) {
-      return;
-    }
-
-    if (!userId) {
+    if (!db.verifyRequest(socket, streamObject) || !userId) {
       console.error('Received stream object without userId:', streamObject);
       return;
     }
